@@ -1,4 +1,4 @@
-# The 9th KIAS CAC Summer School의 강화학습 강의 실습을 위한 페이지입니다.
+# The 9th KIAS CAC Summer School: 강화학습 강의 실습
 
 
 
