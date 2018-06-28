@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
-import gym
+import gym # OpenAI gym (a game simulator)
 import random
 
 from collections import deque
@@ -47,8 +49,14 @@ class Agent:
     def predict(self, X_batch):
         return self.model.predict_on_batch(X_batch)
 
+    def load(self, path):
+        self.model.load_weights(path)
 
-def create_batch(agent, memory, batch_size, discount_rate):
+    def save(self, path):
+        self.model.save_weights(path)
+
+
+def create_batch(agent, memory, batch_size, gamma):
     sample = random.sample(memory, batch_size)
     sample = np.asarray(sample)
 
@@ -61,63 +69,60 @@ def create_batch(agent, memory, batch_size, discount_rate):
     X_batch = np.vstack(s)
     y_batch = agent.predict(X_batch)
 
-    y_batch[np.arange(batch_size), a] = r + discount_rate * np.max(agent.predict(np.vstack(s2)), 1) * (1 - d)
+    y_batch[np.arange(batch_size), a] = r + gamma * np.max(agent.predict(np.vstack(s2)), 1) * (1 - d)
 
     return X_batch, y_batch
 
 
-def print_info(episode, reward, eps):
-    msg = f"[Episode {episode:>5}] Reward: {reward:>5} EPS: {eps:>3.2f}"
+def print_info(episode, score, eps):
+    msg = f"[Episode {episode:>5}] Score: {score:>5} EPS: {eps:>3.2f}"
     print(msg)
 
 
 def main():
     n_episode = 1000
-    discount_rate = 0.99
-    n_memory = 50000
+    gamma = 0.95
+    memory_size = 50000
     batch_size = 32
     eps = 1.0
-    min_eps = 0.1
+    min_eps = 0.01
+    eps_decay = 0.995
+    replay_memory = deque()
     env_name = 'CartPole-v0'
     env = gym.make(env_name)
+    env._max_episode_steps = 500 # default is 200
     agent = Agent(env)
-    memory = deque()
+#    agent.load("./cartpole-dqn.h5")
 
     # CartPole-v0 Clear Condition
-    # Average reward per episode > 195.0 over 10 episodes
-    LAST_10_GAME_EPISODE_REWARDS = deque()
-
     for episode in range(n_episode):
         done = False
-        s = env.reset()
-        eps = max(min_eps, eps - 1/(n_episode/2))
-        episode_reward = 0
+        score = 0
+        state = env.reset()
+        eps = max(min_eps, eps * eps_decay)
+
         while not done:
-            a = agent.act(s, eps)
-            s2, r, done, info = env.step(a)
-            episode_reward += r
+            env.render()
+            action = agent.act(state, eps)
+            next_state, reward, done, _ = env.step(action)
+            reward = reward if not done else -10
+            score += 1
 
-            if done and episode_reward < 200:
-                r = -100
+            replay_memory.append([state, action, reward, next_state, done])
 
-            memory.append([s, a, r, s2, done])
+            if len(replay_memory) > memory_size:
+                replay_memory.popleft()
 
-            if len(memory) > n_memory:
-                memory.popleft()
-
-            if len(memory) > batch_size:
-                X_batch, y_batch = create_batch(agent, memory, batch_size, discount_rate)
+            if len(replay_memory) > batch_size:
+                X_batch, y_batch = create_batch(agent, replay_memory, batch_size, gamma)
                 agent.train(X_batch, y_batch)
 
-            s = s2
+            state = next_state
 
-        print_info(episode, episode_reward, eps)
-        LAST_10_GAME_EPISODE_REWARDS.append(episode_reward)
-        if len(LAST_10_GAME_EPISODE_REWARDS) > 30:
-            LAST_10_GAME_EPISODE_REWARDS.popleft()
+        print_info(episode, score, eps)
 
-        if np.mean(LAST_10_GAME_EPISODE_REWARDS) >= 195.0:
-            print(f"Game solved in {episode + 1} with average reward {np.mean(LAST_10_GAME_EPISODE_REWARDS)}")
+#        if episode % 100 == 0:
+#            agent.save("./save/cartpole-dqn.h5")
 
     env.close()
 
