@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+'''
+Reference repos:
+[1] https://github.com/keon/deep-q-learning
+[2] https://gist.github.com/kkweon/5605f1dfd27eb9c0353de162247a7456
+
+The overall implementation is a little modified from [2] with
+some hyper parameter settings of [1].
+'''
+
 import numpy as np
 import gym # OpenAI gym (a game simulator)
 import random
