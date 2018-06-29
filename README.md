@@ -48,4 +48,4 @@ Deepmind는 이 문제를 어떠한 방법으로 해결하여 일부 게임에�
 
 
 
-#### Special thanks to Wonseok Jung
+*Special thanks to [Wonseok Jung](https://github.com/wonseokjung) & [Kyung Mo Kweon](https://github.com/kkweon)*
