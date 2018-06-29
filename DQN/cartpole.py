@@ -19,7 +19,6 @@ from keras.layers import (Input, Activation, Dense,
 from keras.layers.convolutional import Conv2D
 from keras.models import Model
 
-# flake8: noqa
 
 class Agent:
     def __init__(self, env):
